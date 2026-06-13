@@ -1,0 +1,91 @@
+prometheus-operator-crds:
+  enabled: false
+vm:
+  enabled: true
+  victoria-metrics-operator:
+    enabled: false
+    fullnameOverride: vm-operator
+    replicaCount: 1
+    crds:
+      plain: true
+      cleanup:
+        enabled: false
+    serviceMonitor:
+      enabled: true
+    operator:
+      disable_prometheus_converter: false
+    image:
+      registry: "quay.io"
+      repository: victoriametrics/operator
+    env:
+      - name: VM_USECUSTOMCONFIGRELOADER
+        value: "true"
+      - name: VM_CUSTOMCONFIGRELOADERIMAGE
+        value: "quay.io/victoriametrics/operator:config-reloader-v0.53.0"
+      - name: VM_VMAGENTDEFAULT_IMAGE
+        value: "quay.io/victoriametrics/vmagent"
+      - name: VM_VMAUTHDEFAULT_IMAGE
+        value: "quay.io/victoriametrics/vmauth"
+      - name: VM_VLOGSDEFAULT_IMAGE
+        value: "quay.io/victoriametrics/victoria-logs"
+      - name: VM_VMSINGLEDEFAULT_IMAGE
+        value: "quay.io/victoriametrics/victoria-metrics"
+      - name: VM_VMCLUSTERDEFAULT_VMSELECTDEFAULT_IMAGE
+        value: "quay.io/victoriametrics/vmselect"
+      - name: VM_VMCLUSTERDEFAULT_VMSTORAGEDEFAULT_IMAGE
+        value: "quay.io/victoriametrics/vmstorage"
+      - name: VM_VMCLUSTERDEFAULT_VMINSERTDEFAULT_IMAGE
+        value: "quay.io/victoriametrics/vminsert"
+      - name: VM_VMALERTMANAGER_ALERTMANAGERDEFAULTBASEIMAGE
+        value: "quay.io/prometheus/alertmanager"
+      - name: VM_CONFIG_RELOADER_REQUEST_CPU
+        value: "unlimited"
+      - name: VM_CONFIG_RELOADER_REQUEST_MEMORY
+        value: "unlimited"
+      - name: VM_CONFIG_RELOADER_LIMIT_CPU
+        value: "unlimited"
+      - name: VM_CONFIG_RELOADER_LIMIT_MEMORY
+        value: "unlimited"
+      - name: VM_VMAGENTDEFAULT_USEDEFAULTRESOURCES
+        value: "false"
+      - name: VM_VMALERTMANAGER_USEDEFAULTRESOURCES
+        value: "false"
+  prometheus-node-exporter:
+    enabled: false   # already running via kube-prometheus-stack in monitoring namespace
+  vmsingle:
+    enabled: false
+  vmcluster:
+    enabled: false
+  alertmanager:
+    enabled: false
+  vmalert:
+    enabled: false
+  vmagent:
+    enabled: true
+    spec:
+      selectAllByDefault: true
+      serviceScrapeNamespaceSelector: {}
+      scrapeInterval: 30s
+      externalLabels:
+        cluster: alcs-saas-eks-ap-south-1-dev
+        env: dev
+      # Updated to use internal ALB — path-based routing on port 80
+      remoteWrite:
+        - url: "http://internal-observability-internal-alb-213137362.ap-south-1.elb.amazonaws.com/insert/0/prometheus/api/v1/write"
+      extraArgs:
+        promscrape.maxScrapeSize: 200MB
+        promscrape.dropOriginalLabels: "true"
+      useVMConfigReloader: true
+      resources: {}
+  kube-state-metrics:
+    enabled: false
+  grafana:
+    enabled: false
+  defaultDashboards:
+    enabled: false
+  defaultRules:
+    create: false
+  kubeApiServer:
+    enabled: false
+  kubeControllerManager:
+    enabled: false

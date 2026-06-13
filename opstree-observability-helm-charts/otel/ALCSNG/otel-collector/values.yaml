@@ -1,0 +1,125 @@
+collector:
+  enabled: true
+  crds:
+    enabled: false
+  opentelemetry-operator:
+    enabled: false
+  collectors:
+    daemon:
+      enabled: false
+    otel:
+      mode: deployment
+      suffix: "otel"
+      enabled: true
+      replicas: 1
+      image:
+        repository: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
+        tag: "0.140.1"
+      resources:
+        limits:
+          cpu: 200m
+          memory: 500Mi
+        requests:
+          cpu: 100m
+          memory: 250Mi
+      config:
+        extensions:
+          health_check:
+            endpoint: 0.0.0.0:13133
+
+        connectors:
+          spanmetrics:
+            histogram:
+              explicit:
+                buckets: [100ms, 250ms, 500ms, 1s, 5s, 10s]
+            dimensions:
+              - name: http.method
+              - name: http.status_code
+              - name: technology
+              - name: rems_environment
+              - name: rems_service
+              - name: rems_application_group
+              - name: rems_cluster
+
+        receivers:
+          otlp:
+            protocols:
+              grpc:
+                endpoint: 0.0.0.0:4317
+              http:
+                endpoint: 0.0.0.0:4318
+
+        processors:
+          memory_limiter:
+            check_interval: 1s
+            limit_percentage: 80
+            spike_limit_percentage: 20
+          batch:
+            timeout: 1s
+            send_batch_size: 512
+          resource:
+            attributes:
+              - key: cluster
+                value: "hcmng-eks-ap-south-1-dev"
+                action: upsert
+              - key: env
+                value: "dev"
+                action: upsert
+          k8sattributes:
+            auth_type: serviceAccount
+            extract:
+              metadata:
+                - k8s.namespace.name
+                - k8s.pod.name
+                - k8s.deployment.name
+              labels:
+                - tag_name: rems_environment
+                  key: rems/environment
+                  from: pod
+                - tag_name: rems_service
+                  key: rems/service
+                  from: pod
+                - tag_name: rems_application_group
+                  key: rems/application_group
+                  from: pod
+                - tag_name: rems_cluster
+                  key: rems/cluster
+                  from: pod
+            pod_association:
+              - sources:
+                  - from: resource_attribute
+                    name: k8s.pod.name
+
+        exporters:
+
+          otlphttp/tempo:
+            endpoint: "http://internal-observability-internal-alb-213137362.ap-south-1.elb.amazonaws.com"
+            tls:
+              insecure: true
+
+
+          prometheusremotewrite:
+            endpoint: "http://internal-observability-internal-alb-213137362.ap-south-1.elb.amazonaws.com/insert/0/prometheus/api/v1/write"
+            external_labels:
+              cluster: alcs-saas-eks-ap-south-1-dev
+              env: dev
+            tls:
+              insecure_skip_verify: true
+
+          debug:
+            verbosity: basic
+
+        service:
+          extensions: [health_check]
+          pipelines:
+            traces:
+              receivers:  [otlp]
+              processors: [memory_limiter, k8sattributes, resource, batch]
+              exporters:  [otlphttp/tempo, spanmetrics, debug]
+            metrics:
+              receivers:  [spanmetrics]
+              processors: [memory_limiter, batch]
+              exporters:  [prometheusremotewrite, debug]
+
+  instrumentation:
+    enabled: false

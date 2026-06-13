@@ -1,0 +1,15 @@
+
+apiVersion: v2
+name: otel-collector
+description: A Helm chart for deploying OpenTelemetry Collector
+type: application
+version: 1.0.0
+appVersion: 0.124.1
+dependencies:
+  - name: opentelemetry-kube-stack
+    version: 0.12.4
+    repository: https://open-telemetry.github.io/opentelemetry-helm-charts
+    condition: collector.enabled
+    alias: collector
+    tags:
+      - collector

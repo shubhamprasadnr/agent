@@ -1,0 +1,13 @@
+apiVersion: v2
+name: nonprod-cluster-monitoring
+description: vmagent
+type: application
+version: 1.0.0
+appVersion: "0.70.0"
+
+dependencies:
+  - alias: vm
+    condition: vm.enabled
+    name: victoria-metrics-k8s-stack
+    repository: https://victoriametrics.github.io/helm-charts/
+    version: 0.70.0

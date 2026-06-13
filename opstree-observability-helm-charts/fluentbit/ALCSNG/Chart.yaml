@@ -1,0 +1,28 @@
+apiVersion: v2
+name: loki
+description: A Helm chart for Grafana Loki with Fluent Bit as the log collector
+type: application
+version: 1.0.1
+appVersion: 3.4.2
+
+dependencies:
+  - alias: logging
+    name: loki
+    repository: https://grafana.github.io/helm-charts
+    version: 6.28.0
+    tags:
+      - logging
+  # - alias: promtail
+  #   name: promtail
+  #   repository: https://grafana.github.io/helm-charts
+  #   tags:
+  #     - logging
+  #   version: 6.16.4
+
+  - alias: fluent-bit
+    name: fluent-bit
+    repository: https://ot-container-kit.github.io/helm-charts
+    version: 0.0.1
+    tags:
+      - logging
+
