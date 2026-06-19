@@ -1,61 +1,119 @@
 # Observability Agent Helm Charts
 
-Agent-side observability stack for multi-cluster setup. Each agent cluster forwards **metrics → vmagent**, **logs → Fluent Bit**, **traces → OTel Collector** to the central Teamlease observability cluster via internal ALB.
+Agent-side observability stack for multi-cluster setup. Each agent cluster forwards **metrics → vmagent**, **logs → Fluent Bit**, **traces → OTel Collector** to the central observability cluster via internal ALB.
 
 ## Repository Structure
 
 ```
-opstree-observability-helm-charts/
-  Non-prod/
-    vmagent/
-      <CLUSTER_NAME>/
-        Chart.yaml  Chart.lock  values.yaml  charts/
-    fluentbit/
-      <CLUSTER_NAME>/
-        Chart.yaml  Chart.lock  values.yaml  charts/
-    otel/
-      <CLUSTER_NAME>/
-        otel-operator/
-          Chart.yaml  Chart.lock  values.yaml  charts/
-        otel-collector/
-          Chart.yaml  Chart.lock  values.yaml  charts/
-          templates/
-            instrumentation.yaml
+observability/
+├── Non-prod/
+│   ├── fluentbit/
+│   │   ├── ALCSNG/
+│   │   │   ├── Chart.yaml  Chart.lock  values.yaml
+│   │   │   └── charts/fluent-bit-0.48.10.tgz
+│   │   ├── HCMNG/
+│   │   │   ├── Chart.yaml  Chart.lock  values.yaml
+│   │   │   └── charts/
+│   │   └── Hiretech/
+│   │       ├── Chart.yaml  values.yaml
+│   │       └── charts/
+│   ├── otel/
+│   │   ├── ALCSNG/
+│   │   │   ├── otel-operator/
+│   │   │   │   ├── Chart.yaml  Chart.lock  values.yaml
+│   │   │   │   └── charts/opentelemetry-operator-0.105.0.tgz
+│   │   │   └── otel-collector/
+│   │   │       ├── Chart.yaml  Chart.lock  values.yaml
+│   │   │       ├── charts/opentelemetry-kube-stack-0.12.4.tgz
+│   │   │       └── templates/instrumentation.yaml
+│   │   ├── HCMNG/
+│   │   │   ├── otel-operator/
+│   │   │   │   ├── Chart.yaml  Chart.lock  values.yaml
+│   │   │   │   └── charts/opentelemetry-operator-0.105.0.tgz
+│   │   │   └── otel-collector/
+│   │   │       ├── Chart.yaml  Chart.lock  values.yaml
+│   │   │       ├── charts/opentelemetry-kube-stack-0.12.4.tgz
+│   │   │       └── templates/instrumentation.yaml
+│   │   └── Hiretech/
+│   │       ├── otel-operator/
+│   │       │   ├── Chart.yaml  values.yaml
+│   │       └── otel-collector/
+│   │           ├── Chart.yaml  values.yaml
+│   │           └── templates/instrumentation.yaml
+│   └── vmagent/
+│       ├── ALSCNG/
+│       │   ├── Chart.yaml  Chart.lock  values.yaml
+│       │   └── charts/victoria-metrics-k8s-stack-0.70.0.tgz
+│       ├── HCMNG/
+│       │   ├── Chart.yaml  Chart.lock  values.yaml
+│       │   └── charts/victoria-metrics-k8s-stack-0.70.0.tgz
+│       └── Hiretech/
+│           ├── Chart.yaml  values.yaml
+│           └── charts/
+└── Prod/
+    ├── fluentbit/
+    │   ├── ALCSNG/
+    │   │   ├── Chart.yaml  Chart.lock  values.yaml
+    │   │   └── charts/fluent-bit-0.48.10.tgz
+    │   ├── HCMNG/
+    │   │   ├── Chart.yaml  Chart.lock  values.yaml
+    │   │   └── charts/
+    │   └── Hiretech/
+    │       ├── Chart.yaml  values.yaml
+    │       └── charts/
+    ├── otel/
+    │   ├── ALCSNG/
+    │   │   ├── otel-operator/
+    │   │   │   ├── Chart.yaml  Chart.lock  values.yaml
+    │   │   │   └── charts/opentelemetry-operator-0.105.0.tgz
+    │   │   └── otel-collector/
+    │   │       ├── Chart.yaml  Chart.lock  values.yaml
+    │   │       ├── charts/opentelemetry-kube-stack-0.12.4.tgz
+    │   │       └── templates/instrumentation.yaml
+    │   ├── HCMNG/
+    │   │   ├── otel-operator/
+    │   │   │   ├── Chart.yaml  Chart.lock  values.yaml
+    │   │   │   └── charts/opentelemetry-operator-0.105.0.tgz
+    │   │   └── otel-collector/
+    │   │       ├── Chart.yaml  Chart.lock  values.yaml
+    │   │       ├── charts/opentelemetry-kube-stack-0.12.4.tgz
+    │   │       └── templates/instrumentation.yaml
+    │   └── Hiretech/
+    │       ├── otel-operator/
+    │       │   ├── Chart.yaml  values.yaml
+    │       └── otel-collector/
+    │           ├── Chart.yaml  values.yaml
+    │           └── templates/instrumentation.yaml
+    └── vmagent/
+        ├── ALSCNG/
+        │   ├── Chart.yaml  Chart.lock  values.yaml
+        │   └── charts/victoria-metrics-k8s-stack-0.70.0.tgz
+        ├── HCMNG/
+        │   ├── Chart.yaml  Chart.lock  values.yaml
+        │   └── charts/victoria-metrics-k8s-stack-0.70.0.tgz
+        └── Hiretech/
+            ├── Chart.yaml  values.yaml
+            └── charts/
 ```
 
-## Prerequisites
+## Cluster Reference
 
-```bash
-# Update kubeconfig for target cluster
-aws eks update-kubeconfig --name <cluster-name> --region ap-south-1 --profile <profile>
+| Cluster | Environment | vmagent | Fluent Bit | OTel |
+|---|---|---|---|---|
+| HCMNG | Non-prod + Prod | `Non-prod/vmagent/HCMNG` | `Non-prod/fluentbit/HCMNG` | `Non-prod/otel/HCMNG` |
+| ALCSNG | Non-prod + Prod | `Non-prod/vmagent/ALSCNG` | `Non-prod/fluentbit/ALCSNG` | `Non-prod/otel/ALCSNG` |
+| Hiretech | Non-prod + Prod | `Non-prod/vmagent/Hiretech` | `Non-prod/fluentbit/Hiretech` | `Non-prod/otel/Hiretech` |
 
-# Create observability namespace
-kubectl create namespace observability
-
-# Verify context
-kubectl config current-context
-```
 
 ## 1. VMAgent
 
 Scrapes metrics from all namespaces and remote-writes to central VictoriaMetrics via internal ALB.
 
-### Check before deploying
+
+### Installation
 
 ```bash
-# Check if vm-operator already exists
-kubectl get pods -A | grep vm-operator
-
-# Check if kube-state-metrics and node-exporter already exist
-kubectl get pods -A | grep -iE "kube-state-metrics|node-exporter"
-```
-
-> **Note:** If `kube-state-metrics` or `node-exporter` already exist, set `kube-state-metrics.enabled: false` and `prometheus-node-exporter.enabled: false` in `values.yaml` to avoid duplicate metrics.
-
-### Fresh Install
-
-```bash
-cd Non-prod/vmagent/<CLUSTER_NAME>
+cd <Non-prod|Prod>/vmagent/<CLUSTER_NAME>
 
 # First install with vmagent disabled (installs operator only)
 helm install <release_name> . \
@@ -72,7 +130,7 @@ helm upgrade <release_name> . \
 ### Upgrade
 
 ```bash
-cd Non-prod/vmagent/<CLUSTER_NAME>
+cd <Non-prod|Prod>/vmagent/<CLUSTER_NAME>
 
 helm upgrade <release_name> . \
   -n observability \
@@ -85,35 +143,18 @@ helm upgrade <release_name> . \
 # Check pod is running
 kubectl get pods -n observability | grep vmagent
 
-# Check remoteWrite logs
-kubectl logs -n observability \
-  $(kubectl get pod -n observability -l app.kubernetes.io/name=vmagent \
-  -o jsonpath='{.items[0].metadata.name}') \
-  -c vmagent --tail=20 | grep -iE "remotewrite|2XX|error"
 ```
 
 ## 2. Fluent Bit
 
 Runs as a DaemonSet on every node. Collects container logs from `/var/log/containers/` and forwards to central Loki.
 
-### Check before deploying
+
+
+###  Installation
 
 ```bash
-# Check for node taints
-kubectl describe nodes | grep -i taint
-
-# Check if another log collector exists
-kubectl get pods -A | grep -iE "fluentd|fluent-bit|promtail"
-```
-
-> **Note for IPv6/dual-stack clusters:** Set `HTTP_Listen ::` in the `[SERVICE]` block of `values.yaml`. Using `0.0.0.0` causes `CrashLoopBackOff` on IPv6 clusters.
-
-> **Note for tainted nodes:** Add matching `tolerations` in `values.yaml` so DaemonSet schedules on all nodes.
-
-### Fresh Install
-
-```bash
-cd Non-prod/fluentbit/<CLUSTER_NAME>
+cd <Non-prod|Prod>/fluentbit/<CLUSTER_NAME>
 
 helm install <release_name> . \
   -n observability \
@@ -123,7 +164,7 @@ helm install <release_name> . \
 ### Upgrade
 
 ```bash
-cd Non-prod/fluentbit/<CLUSTER_NAME>
+cd <Non-prod|Prod>/fluentbit/<CLUSTER_NAME>
 
 helm upgrade <release_name> . \
   -n observability \
@@ -139,16 +180,6 @@ kubectl get daemonset -n observability | grep fluent-bit
 # Check all pods are Running
 kubectl get pods -n observability -l app.kubernetes.io/name=fluent-bit -o wide
 
-# Check HTTP server listening (IPv6: iface=::, IPv4: iface=0.0.0.0)
-kubectl logs -n observability \
-  $(kubectl get pod -n observability -l app.kubernetes.io/name=fluent-bit \
-  -o jsonpath='{.items[0].metadata.name}') | grep "http_server"
-
-# Check no loki errors
-kubectl logs -n observability \
-  $(kubectl get pod -n observability -l app.kubernetes.io/name=fluent-bit \
-  -o jsonpath='{.items[0].metadata.name}') \
-  --tail=20 | grep -iE "error|failed|upstream"
 ```
 
 ## 3. OpenTelemetry Collector
@@ -166,7 +197,7 @@ kubectl get pods -A | grep otel-operator
 ### Step 2 — Install otel-operator (skip if already exists)
 
 ```bash
-cd Non-prod/otel/<CLUSTER_NAME>/otel-operator
+cd <Non-prod|Prod>/otel/<CLUSTER_NAME>/otel-operator
 
 helm install <release_name> . \
   -n observability \
@@ -176,7 +207,7 @@ helm install <release_name> . \
 #### Upgrade otel-operator
 
 ```bash
-cd Non-prod/otel/<CLUSTER_NAME>/otel-operator
+cd <Non-prod|Prod>/otel/<CLUSTER_NAME>/otel-operator
 
 helm upgrade <release_name> . \
   -n observability \
@@ -186,7 +217,7 @@ helm upgrade <release_name> . \
 ### Step 3 — Apply Instrumentation CR
 
 ```bash
-kubectl apply -f Non-prod/otel/<CLUSTER_NAME>/otel-collector/templates/instrumentation.yaml
+kubectl apply -f <Non-prod|Prod>/otel/<CLUSTER_NAME>/otel-collector/templates/instrumentation.yaml
 
 # Verify
 kubectl get instrumentation -n observability
@@ -195,7 +226,7 @@ kubectl get instrumentation -n observability
 ### Step 4 — Deploy otel-collector
 
 ```bash
-cd Non-prod/otel/<CLUSTER_NAME>/otel-collector
+cd <Non-prod|Prod>/otel/<CLUSTER_NAME>/otel-collector
 
 helm install <release_name> . \
   -n observability \
@@ -205,7 +236,7 @@ helm install <release_name> . \
 #### Upgrade otel-collector
 
 ```bash
-cd Non-prod/otel/<CLUSTER_NAME>/otel-collector
+cd <Non-prod|Prod>/otel/<CLUSTER_NAME>/otel-collector
 
 helm upgrade <release_name> . \
   -n observability \
@@ -226,31 +257,7 @@ helm upgrade <release_name> . \
 kubectl rollout restart deployment/<app-name> -n <app-namespace>
 ```
 
-> **Node.js:** Dockerfile must use exec-form CMD:
-> ```dockerfile
-> # Correct
-> CMD ["node", "dist/main"]
-> # Wrong — NODE_OPTIONS won't propagate
-> CMD ["sh", "-c", "node dist/main"]
-> ```
 
-### Verify
-
-```bash
-# Check collector pod is running
-kubectl get pods -n observability | grep otel-collector
-
-# Check health
-kubectl port-forward -n observability \
-  svc/<release_name>-collector 13133:13133
-curl http://localhost:13133/
-
-# Check collector logs
-kubectl logs -n observability \
-  $(kubectl get pod -n observability -l app.kubernetes.io/name=otel-collector \
-  -o jsonpath='{.items[0].metadata.name}') \
-  --tail=20 | grep -iE "error|failed"
-```
 
 ## Central ALB Endpoint Paths
 
@@ -260,23 +267,4 @@ kubectl logs -n observability \
 | Logs | `/loki/api/v1/push` | Fluent Bit loki output |
 | Traces | `/v1/traces` | OTel Collector otlphttp exporter |
 
-## Helm Release Reference
 
-| Component | Typical Release Name | Namespace | Chart Location |
-|---|---|---|---|
-| VMAgent | `vm-<cluster>` | observability | `Non-prod/vmagent/<CLUSTER>` |
-| Fluent Bit | `fluent-bit-<cluster>` | observability | `Non-prod/fluentbit/<CLUSTER>` |
-| OTel Operator | `otel-operator-<cluster>` | observability | `Non-prod/otel/<CLUSTER>/otel-operator` |
-| OTel Collector | `otel-collector-<cluster>` | observability | `Non-prod/otel/<CLUSTER>/otel-collector` |
-
-## Pushing Changes
-
-```bash
-# Push to CodeCommit
-git add .
-git commit -m "update: <description>"
-git push origin observability-agent
-
-# Push to GitHub mirror
-git push github observability-agent
-```
